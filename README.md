@@ -22,7 +22,12 @@ G1611 decode/encode compatibility with `zte-config-utility` remains unestablishe
 
 ## Contribution status
 
-These documents and an issue draft are prepared locally. No upstream issue or PR has been submitted as part of this publication preparation. There is no claimed merged contribution. If a submission is made, add its actual URL and status here.
+These documents were prepared locally and are now published. The following upstream submissions to [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility) have been opened (both open and under review; no merged contribution is claimed):
+
+- Issue [#208](https://github.com/mkst/zte-config-utility/issues/208) — native configuration-format evidence and the compatibility question for the owned AIS ZTE G1611.
+- Pull request [#209](https://github.com/mkst/zte-config-utility/pull/209) — a documentation-only README example for the existing type-6 decode path.
+
+Status will be updated here as the submissions are reviewed.
 
 Two concrete contributions are available for discussion: the G1611 native-format research report, and a README explanation of existing type-6 decoding. A G1611 support implementation still needs a tested format/parameter mapping. Synthetic type-6 regression tests would be another possible contribution, but no new test patch is included or claimed as executed.
 
