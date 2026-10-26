@@ -1,0 +1,35 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+This case study and its accompanying documentation are licensed under the
+Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+You are free to:
+  - Share — copy and redistribute the material in any medium or format.
+  - Adapt — remix, transform, and build upon the material for any purpose,
+    even commercially.
+
+Under the following terms:
+  - Attribution — You must give appropriate credit, provide a link to this
+    license, and indicate if changes were made. You may do so in any
+    reasonable manner, but not in any way that suggests the licensor endorses
+    you or your use.
+
+No additional restrictions — You may not apply legal terms or technological
+measures that legally restrict others from doing anything the license permits.
+
+Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+Human-readable summary: https://creativecommons.org/licenses/by/4.0/
+
+Scope notice
+------------
+This license covers the original text of this repository (the case study,
+mechanism notes, reproduction checklist, and issue/proposal drafts).
+
+It does not relicense, and makes no claim over, any third-party material that
+is only referenced or cited here. In particular, the referenced upstream
+project mkst/zte-config-utility (https://github.com/mkst/zte-config-utility)
+is covered by its own license held by its own contributors; this repository
+links to it for attribution and context and does not redistribute its source.
+
+No vendor firmware image, device configuration, packet capture, credential, or
+private network/account identifier is included in or licensed by this work.
