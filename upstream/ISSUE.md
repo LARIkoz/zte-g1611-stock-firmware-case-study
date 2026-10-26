@@ -29,6 +29,10 @@ The next useful evidence would be a pinned-baseline reproduction, identification
 
 No device configuration, firmware image, key material, or identifying device/network data is attached. A shareable fixture has not yet been produced.
 
-The companion case study and mechanism note can be linked here after they have public URLs.
+Companion public references:
+
+- Case study: https://github.com/LARIkoz/zte-g1611-stock-firmware-case-study/blob/main/CASE-STUDY.md
+- Native configuration-loading mechanism note: https://github.com/LARIkoz/zte-g1611-stock-firmware-case-study/blob/main/MECHANISMS.md#native-configuration-loading
+- Repository root: https://github.com/LARIkoz/zte-g1611-stock-firmware-case-study
 
 A separate small README proposal documents the existing type-6 CLI and seed-string derivation. It does not depend on claiming G1611 support and can be discussed as a documentation-only change.
