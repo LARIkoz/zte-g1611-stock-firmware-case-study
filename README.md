@@ -1,55 +1,83 @@
-# ZTE G1611 stock-firmware case study
+# ZTE G1611 (AIS, stock firmware): persistent root-level maintenance access with Tailscale + SSH
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-A focused account of an investigation into persistent maintenance access and an isolated Ethernet gateway on an owned AIS ZTE G1611. It covers selected mechanisms, successful experiments, and the physical-link test that invalidated the proposed gateway setup.
+A practical how-to case study of turning an **owned, stock-firmware AIS ZTE G1611** GPON router into a remotely maintainable box over Tailscale and SSH — without flashing custom firmware and without a writable root filesystem. It documents what worked, how, and (just as usefully) what did **not**.
 
-Research cutoff: **25 October 2026**. Later device work is outside this account.
+Research cutoff: **25 October 2026**. All work was done on hardware the author owns.
 
-## Read the case
+## Device identifiers (for search / same-device owners)
 
-- [Case study](CASE-STUDY.md): the investigation, the turning points, and the measured outcome.
-- [Key mechanisms](MECHANISMS.md): native configuration loading, saved-command startup, service ordering, and packet isolation.
-- [Reproducing selected checks](REPRODUCING.md): conditions, commands, expected observations, rollback criteria and explicit reproduction gaps.
-- [Upstream issue draft](upstream/ISSUE.md): the configuration-format question relevant to [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility).
-- [Type-6 documentation proposal](upstream/TYPE6-DOC-PROPOSAL.md): a concrete README addition explaining an existing decoder path and its parameter semantics.
+If you have this exact unit, these are the markings and strings to match. They are product/build identifiers — not the unit's serial number, MAC, or network identity.
 
-## What was established
+| Item                     | Value                                                            |
+| ------------------------ | ---------------------------------------------------------------- |
+| Model / operator variant | **AIS ZTE G1611** (GPON ONT)                                     |
+| Hardware version         | **G1611 V9.1.41**                                                |
+| Main PCB marking         | **`73013F6600P_220700`**                                         |
+| Antenna-board marking    | **F6600P V9.1**                                                  |
+| Main SoC / CPU           | **ZTE ZX279128S** — dual Cortex-A9, ARMv7                        |
+| Wi-Fi                    | **MT7916** (`mt7916.ko`)                                         |
+| RAM / Flash              | 256 MiB / 128 MiB                                                |
+| Firmware string          | **`G1611_PON_1.1`** (extension `07e8P4N10396`, build 2024-09-18) |
+| Boot-software string     | **`V9.0.10P10N16`**                                              |
+| Kernel / toolchain       | **Linux 4.1.25**, Buildroot 2017.05, GCC 4.9.4, glibc 2.26       |
+| Stock tools              | BusyBox 1.17.2, curl 7.59.0                                      |
+| Tailscale build used     | official **1.104.1** ARM, GOARM5 (userspace, no TUN)             |
 
-Persistent userspace maintenance services were demonstrated across reboot. Temporary Ethernet isolation worked in a controlled packet test, but a physical cable interruption caused native firmware to restore LAN forwarding. The proposed isolated gateway therefore failed its acceptance criterion.
+## What this achieves — and what it does not
 
-G1611 decode/encode compatibility with `zte-config-utility` remains unestablished. The native configuration observations are research input for a compatibility investigation.
+**Achieved (reboot-tested):**
+
+- ✅ Temporary **root shell** through a factory-service path.
+- ✅ Logical flash / partition **backups**, transfer-checked; a round trip between two healthy firmware banks.
+- ✅ **Persistence without a writable rootfs**: a saved-command native startup consumer (`CMDPARAMINFO`) launches a maintenance binary after boot.
+- ✅ **Tailscale** (userspace networking, no TUN) enrolled and authenticated, reachable **after reboot**.
+- ✅ Restricted **SSH (Dropbear)** with a **delayed start** to avoid a race with native firewall init.
+- ✅ A bounded **service reduction** that survived reboot.
+
+**Not achieved (honest limits — don't expect these from this repo):**
+
+- ❌ **No custom firmware flash / no writable root filesystem.** The active rootfs stayed read-only; a remount that returned "success" was contradicted by readback and file-creation. We did **root**, not reflash.
+- ❌ **No isolated Ethernet gateway for a downstream client.** It worked in a controlled packet test, then **failed a physical cable-cycle test** — native firmware restored LAN forwarding after a ~5 s carrier interruption.
+- ❌ **No external `config.bin` decoder/encoder.** G1611 compatibility with `zte-config-utility` is unresolved (see Contribution status).
+
+## How we did it (overview)
+
+Each step has its measured detail in the linked documents.
+
+1. **Get temporary root** via a factory-service path → a shell, plus logical flash/partition backups. Detail: [CASE-STUDY.md](CASE-STUDY.md#a-root-shell-did-not-provide-a-writable-firmware-image).
+2. **Persist without touching the read-only rootfs** — use the native `CMDPARAMINFO` saved-command startup consumer to launch a background maintenance binary after native init. Detail: [MECHANISMS.md](MECHANISMS.md#saved-command-startup-through-cmdparaminfo).
+3. **Bring up Tailscale** in userspace mode (no TUN) as the maintenance path; confirm enrollment and authenticated reachability after a reboot. Detail: [CASE-STUDY.md](CASE-STUDY.md#starting-a-process-and-preserving-a-working-service-were-separate-tasks).
+4. **Add restricted SSH (Dropbear)** with a delayed start so it comes up after native firewall init. Same section.
+5. **Reduce services** within a bounded experiment that accounts for native process-controller restart behavior. Same section.
+6. **Step-by-step conditions, commands, expected observations, and rollback criteria:** [REPRODUCING.md](REPRODUCING.md) — including which steps are repeatable read-only checks and which need adapters/scripts that are **not** published.
+
+## Read the full case
+
+- **[CASE-STUDY.md](CASE-STUDY.md)** — the investigation, the turning points, and the measured outcome.
+- **[MECHANISMS.md](MECHANISMS.md)** — native configuration loading, saved-command startup, service ordering, packet isolation.
+- **[REPRODUCING.md](REPRODUCING.md)** — conditions, commands, expected observations, rollback, and explicit reproduction gaps.
+- **[upstream/ISSUE.md](upstream/ISSUE.md)** / **[upstream/TYPE6-DOC-PROPOSAL.md](upstream/TYPE6-DOC-PROPOSAL.md)** — the configuration-format question and documentation proposal for [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility).
+
+## Scope and safety
+
+This is an edited technical narrative, not a full transcript or a copy-and-run dataset. Read-only inventory checks are repeatable with compatible access; the native DB adapter/save route and the original topology-test scripts remain unpublished, so full reproduction is explicitly incomplete.
+
+This document set contains **no** raw session archive, device configuration, firmware image, packet capture, credential, private account, or network identifier. Native vendor paths and function names are kept only where they explain a mechanism.
 
 ## Contribution status
 
-These documents were prepared locally and are now published. The following upstream submissions to [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility) have been opened (both open and under review; no merged contribution is claimed):
+These documents are published, and the following upstream submissions to [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility) are open (under review; no merged contribution is claimed):
 
 - Issue [#208](https://github.com/mkst/zte-config-utility/issues/208) — native configuration-format evidence and the compatibility question for the owned AIS ZTE G1611.
 - Pull request [#209](https://github.com/mkst/zte-config-utility/pull/209) — a documentation-only README example for the existing type-6 decode path.
 
-Status will be updated here as the submissions are reviewed.
-
-Two concrete contributions are available for discussion: the G1611 native-format research report, and a README explanation of existing type-6 decoding. A G1611 support implementation still needs a tested format/parameter mapping. Synthetic type-6 regression tests would be another possible contribution, but no new test patch is included or claimed as executed.
-
-Generic type-6 decoding already exists at the [inspected upstream baseline](https://github.com/mkst/zte-config-utility/commit/e3a1a7f56c2df26a02f52f72b16173d0702d9ad0), following [PR #204](https://github.com/mkst/zte-config-utility/pull/204). That work belongs to its upstream contributors.
-
-## Publication scope
-
-This is an edited technical narrative, not a complete transcript or a reproducibility dataset. The underlying working records remain private; readers cannot independently replay every historical experiment from these documents alone.
-
-The case now includes a device/software profile, the examined native startup contract and a practical evidence checklist. Read-only inventory can be repeated with compatible access. The native DB adapter/save route and original topology-test scripts remain unpublished, so full copy-and-run reproduction is explicitly incomplete. No successful G1611 decoder or persistent isolated gateway is supplied.
-
-This document set contains no raw session archive, device configuration, firmware image, packet capture, credential, private account or network identifier. Native vendor paths and function names are retained where they explain the mechanism. The earlier bulk journal packages are outside this publication.
-
-## Keeping the case independent
-
-Publish these documents in a standalone case repository, with its own history and a retained local copy. The narrative, hardware/software profile and essential mechanism descriptions are stored here; they remain readable if the upstream repository is closed or deleted. Upstream links provide attribution and source context rather than being the only copy of the explanation.
-
-Keep a versioned document-only archive and checksum alongside the local repository, and optionally attach that archive to a case release. This preserves the case documents, not the upstream tool. Preserving executable tooling additionally requires a complete upstream checkout/archive and its dependency information; any redistributed upstream source must retain its accompanying license notices. A fork for a future PR serves a separate contribution workflow.
+Generic type-6 decoding already exists upstream after [PR #204](https://github.com/mkst/zte-config-utility/pull/204); that work belongs to its contributors. A G1611 "supported model" claim would still need a verified container/derivation mapping and a valid synthetic fixture — neither is included here.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report corrections to the case and how the configuration-format observations feed a focused upstream discussion in [mkst/zte-config-utility](https://github.com/mkst/zte-config-utility).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report corrections and how the configuration-format observations feed the focused upstream discussion.
 
 ## License
 
